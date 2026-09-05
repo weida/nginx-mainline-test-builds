@@ -42,9 +42,22 @@ jobs:
       id: version
       run: |
         set -euo pipefail
-        VERSION="$(curl -fsSL --retry 3 --retry-delay 2 "https://api.github.com/repos/freenginx/nginx/tags?per_page=1" | jq -r '.[0].name | sub("^release-"; "")')"
+        VERSION=""
+        for attempt in 1 2 3; do
+          VERSION="$(
+            curl -fsSL --retry 3 --retry-delay 2 "https://api.github.com/repos/freenginx/nginx/tags?per_page=100" |
+              jq -r '.[].name | select(test("^release-[0-9]+\\.[0-9]+\\.[0-9]+$")) | sub("^release-"; "")' |
+              sort -V |
+              tail -1
+          )" || true
+          if [ -n "$VERSION" ] && [ "$VERSION" != "null" ]; then
+            break
+          fi
+          echo "Attempt $attempt: failed to resolve freenginx version, retrying..."
+          sleep $((attempt * 2))
+        done
         if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-          echo "Failed to resolve freenginx version"
+          echo "Failed to resolve freenginx version after retries"
           exit 1
         fi
         echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -202,22 +215,65 @@ jobs:
         name: freenginx-binaries${{ matrix.variant.suffix }}
         path: freenginx-*.tar.gz
         retention-days: 7
-    
+
+  release:
+    needs: docker
+    if: |
+      always() && !cancelled() &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') &&
+      github.ref == 'refs/heads/main' &&
+      needs.docker.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get freenginx version
+      id: version
+      run: |
+        set -euo pipefail
+        VERSION=""
+        for attempt in 1 2 3; do
+          VERSION="$(
+            curl -fsSL --retry 3 --retry-delay 2 "https://api.github.com/repos/freenginx/nginx/tags?per_page=100" |
+              jq -r '.[].name | select(test("^release-[0-9]+\\.[0-9]+\\.[0-9]+$")) | sub("^release-"; "")' |
+              sort -V |
+              tail -1
+          )" || true
+          if [ -n "$VERSION" ] && [ "$VERSION" != "null" ]; then
+            break
+          fi
+          echo "Attempt $attempt: failed to resolve freenginx version, retrying..."
+          sleep $((attempt * 2))
+        done
+        if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+          echo "Failed to resolve freenginx version after retries"
+          exit 1
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "freenginx version: $VERSION"
+
     - name: Download all artifacts
-      if: steps.decide.outputs.skip != 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' && matrix.variant.suffix == ''
       uses: actions/download-artifact@v4
       with:
         path: ./artifacts
-    
+
     - name: Prepare release files
-      if: steps.decide.outputs.skip != 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' && matrix.variant.suffix == ''
+      id: prepare
       run: |
+        set -euo pipefail
         mkdir -p release-files
         find ./artifacts -name "*.tar.gz" -exec cp {} release-files/ \;
-        ls -lh release-files/
-    
+        ls -lh release-files/ || true
+        if ! compgen -G "release-files/*.tar.gz" > /dev/null; then
+          echo "No release tarballs found (likely scheduled skip with no new build); skipping release"
+          echo "has_files=false" >> $GITHUB_OUTPUT
+        else
+          echo "has_files=true" >> $GITHUB_OUTPUT
+        fi
+
     - name: Create GitHub Release
-      if: steps.decide.outputs.skip != 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' && matrix.variant.suffix == ''
+      if: steps.prepare.outputs.has_files == 'true'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: freenginx-v${{ steps.version.outputs.version }}
@@ -285,9 +341,9 @@ jobs:
         overwrite: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Update Docker Hub Description
-      if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/main' && matrix.variant.suffix == ''
+      if: steps.prepare.outputs.has_files == 'true'
       run: |
         sudo apt-get update && sudo apt-get install -y jq
         chmod +x update-dockerhub-description-freenginx.sh
