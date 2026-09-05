@@ -40,12 +40,17 @@ jobs:
     
     - name: Get freenginx version
       id: version
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -euo pipefail
         VERSION=""
-        for attempt in 1 2 3; do
+        for attempt in 1 2 3 4 5; do
           VERSION="$(
-            curl -fsSL --retry 3 --retry-delay 2 "https://api.github.com/repos/freenginx/nginx/tags?per_page=100" |
+            curl -fsSL --retry 3 --retry-delay 2 \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/freenginx/nginx/tags?per_page=100" |
               jq -r '.[].name | select(test("^release-[0-9]+\\.[0-9]+\\.[0-9]+$")) | sub("^release-"; "")' |
               sort -V |
               tail -1
@@ -53,16 +58,15 @@ jobs:
           if [ -n "$VERSION" ] && [ "$VERSION" != "null" ]; then
             break
           fi
-          echo "Attempt $attempt: failed to resolve freenginx version, retrying..."
+          echo "version resolve attempt $attempt failed; retrying..."
           sleep $((attempt * 2))
         done
         if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-          echo "Failed to resolve freenginx version after retries"
+          echo "Failed to resolve freenginx version"
           exit 1
         fi
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "freenginx version: $VERSION (glibc ${{ matrix.variant.glibc }}, ${{ matrix.variant.base }})"
-    
     - name: Check if version exists
       id: check
       env:
@@ -222,7 +226,7 @@ jobs:
       always() && !cancelled() &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') &&
       github.ref == 'refs/heads/main' &&
-      needs.docker.result == 'success'
+      (needs.docker.result == 'success' || needs.docker.result == 'failure')
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -230,12 +234,17 @@ jobs:
 
     - name: Get freenginx version
       id: version
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -euo pipefail
         VERSION=""
-        for attempt in 1 2 3; do
+        for attempt in 1 2 3 4 5; do
           VERSION="$(
-            curl -fsSL --retry 3 --retry-delay 2 "https://api.github.com/repos/freenginx/nginx/tags?per_page=100" |
+            curl -fsSL --retry 3 --retry-delay 2 \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/freenginx/nginx/tags?per_page=100" |
               jq -r '.[].name | select(test("^release-[0-9]+\\.[0-9]+\\.[0-9]+$")) | sub("^release-"; "")' |
               sort -V |
               tail -1
@@ -243,16 +252,15 @@ jobs:
           if [ -n "$VERSION" ] && [ "$VERSION" != "null" ]; then
             break
           fi
-          echo "Attempt $attempt: failed to resolve freenginx version, retrying..."
+          echo "version resolve attempt $attempt failed; retrying..."
           sleep $((attempt * 2))
         done
         if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-          echo "Failed to resolve freenginx version after retries"
+          echo "Failed to resolve freenginx version"
           exit 1
         fi
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "freenginx version: $VERSION"
-
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
