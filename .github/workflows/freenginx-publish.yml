@@ -286,7 +286,7 @@ jobs:
           - ✅ HTTP/3 (QUIC) support
           - ✅ TLS 1.3
           - ✅ Latest OpenSSL, PCRE2, and zlib
-          - ✅ Multi-architecture support (amd64, arm64)
+          - ✅ Multi-architecture support (amd64, arm64) for standard and compat
           - ✅ Multiple glibc versions for compatibility
           
           ### Docker Images
@@ -333,7 +333,7 @@ jobs:
           
           ### Build Information
           - freenginx: ${{ steps.version.outputs.version }}
-          - Architectures: amd64, arm64
+          - Architectures: amd64, arm64 (standard and compat; CentOS 7 SCL via archive.kernel.org centos-vault)
           - glibc versions: 2.39 (standard), 2.17 (compat)
           - Built: ${{ github.event.head_commit.timestamp }}
           - Commit: ${{ github.sha }}
