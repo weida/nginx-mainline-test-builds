@@ -55,20 +55,17 @@ The compat track is still built against a CentOS 7 / glibc 2.17 environment for
 runtime compatibility, but it uses `devtoolset-9` so OpenSSL 4.0 and current
 nginx sources can be compiled with a modern enough GCC.
 
+EOL CentOS 7 yum/SCL packages (including altarch/aarch64) are fetched over HTTP
+from `archive.kernel.org/centos-vault` rather than `vault.centos.org`, which
+avoids HTTPS 403 failures under QEMU during multi-arch CI builds.
+
 ### Build Performance Notes
 
-**Compat is amd64-only for now.** ARM64 compat builds are paused because the
-CentOS 7 altarch packages on `vault.centos.org` return HTTPS 403 under QEMU,
-so the compat track cannot reliably fetch arm64 build dependencies in CI.
-
-The compat track remains aimed at CentOS 7 / glibc 2.17 compatibility (with
-`devtoolset-9` for a modern enough GCC). It is still expected to build slower
-than the standard track:
+The compat track is expected to build much slower than the standard track:
 
 - It compiles nginx, OpenSSL, PCRE2, and zlib from source.
-- Compat builds `linux/amd64` only (arm64 compat paused; see note above).
-- Standard still builds both `linux/amd64` and `linux/arm64` (arm64 under
-  Docker buildx/QEMU in GitHub Actions where needed).
+- It builds both `linux/amd64` and `linux/arm64`.
+- The arm64 compat build runs under Docker buildx/QEMU in GitHub Actions.
 - Final OpenSSL 4.0 validation took about 39 minutes for nginx compat and about
   43 minutes for freenginx compat.
 
