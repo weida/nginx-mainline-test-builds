@@ -33,8 +33,8 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          - { dockerfile: 'Dockerfile', suffix: '', glibc: '2.39', base: 'Ubuntu 24.04', cache_scope: 'nginx-standard' }
-          - { dockerfile: 'Dockerfile.compat', suffix: '-compat', glibc: '2.17', base: 'CentOS 7 build + AlmaLinux 8 runtime', cache_scope: 'nginx-compat' }
+          - { dockerfile: 'Dockerfile', suffix: '', glibc: '2.39', base: 'Ubuntu 24.04', cache_scope: 'nginx-standard', platforms: 'linux/amd64,linux/arm64' }
+          - { dockerfile: 'Dockerfile.compat', suffix: '-compat', glibc: '2.17', base: 'CentOS 7 build + AlmaLinux 8 runtime', cache_scope: 'nginx-compat', platforms: 'linux/amd64' }
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -109,7 +109,7 @@ jobs:
         echo "Building image tags for $IMAGE"
     
     - name: Set up QEMU
-      if: steps.decide.outputs.skip != 'true'
+      if: steps.decide.outputs.skip != 'true' && contains(matrix.variant.platforms, 'linux/arm64')
       uses: docker/setup-qemu-action@v3
     
     - name: Set up Docker Buildx
@@ -129,7 +129,7 @@ jobs:
       with:
         context: .
         file: ${{ matrix.variant.dockerfile }}
-        platforms: linux/amd64,linux/arm64
+        platforms: ${{ matrix.variant.platforms }}
         push: true
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/nginx-http3:latest${{ matrix.variant.suffix }}
@@ -187,20 +187,22 @@ jobs:
         docker rm $CONTAINER_AMD64
         rm -rf nginx-amd64
         
-        # Extract arm64 binary
-        docker pull --platform linux/arm64 ${{ secrets.DOCKERHUB_USERNAME }}/nginx-http3:latest${{ matrix.variant.suffix }}
-        CONTAINER_ARM64=$(docker create --platform linux/arm64 ${{ secrets.DOCKERHUB_USERNAME }}/nginx-http3:latest${{ matrix.variant.suffix }})
-        docker cp $CONTAINER_ARM64:/usr/local/nginx ./nginx-arm64
+        # Extract arm64 binary (only when platforms includes arm64)
+        if [[ "${{ matrix.variant.platforms }}" == *"linux/arm64"* ]]; then
+          docker pull --platform linux/arm64 ${{ secrets.DOCKERHUB_USERNAME }}/nginx-http3:latest${{ matrix.variant.suffix }}
+          CONTAINER_ARM64=$(docker create --platform linux/arm64 ${{ secrets.DOCKERHUB_USERNAME }}/nginx-http3:latest${{ matrix.variant.suffix }})
+          docker cp $CONTAINER_ARM64:/usr/local/nginx ./nginx-arm64
         
-        rm -f nginx-arm64/logs/access.log nginx-arm64/logs/error.log
-        touch nginx-arm64/logs/access.log nginx-arm64/logs/error.log
+          rm -f nginx-arm64/logs/access.log nginx-arm64/logs/error.log
+          touch nginx-arm64/logs/access.log nginx-arm64/logs/error.log
         
-        cp -r install-scripts/* nginx-arm64/
-        chmod +x nginx-arm64/*.sh
+          cp -r install-scripts/* nginx-arm64/
+          chmod +x nginx-arm64/*.sh
         
-        tar czf nginx-${{ steps.version.outputs.nginx_version }}-linux-arm64${{ matrix.variant.suffix }}.tar.gz -C nginx-arm64 .
-        docker rm $CONTAINER_ARM64
-        rm -rf nginx-arm64
+          tar czf nginx-${{ steps.version.outputs.nginx_version }}-linux-arm64${{ matrix.variant.suffix }}.tar.gz -C nginx-arm64 .
+          docker rm $CONTAINER_ARM64
+          rm -rf nginx-arm64
+        fi
     
     - name: Upload binaries as artifact
       if: steps.decide.outputs.skip != 'true'
@@ -237,7 +239,7 @@ jobs:
           - ✅ HTTP/3 (QUIC) support
           - ✅ TLS 1.3
           - ✅ Latest OpenSSL, PCRE2, and zlib
-          - ✅ Multi-architecture support (amd64, arm64)
+          - ✅ Standard: multi-architecture (amd64, arm64); Compat: amd64-only for now
           - ✅ Multiple glibc versions for compatibility
           
           ### Docker Images
@@ -273,13 +275,10 @@ jobs:
           sudo systemctl start nginx
           ```
           
-          **ARM64 (aarch64)**:
+          **ARM64 (aarch64)** (standard only — compat is amd64-only for now):
           ```bash
           # Standard version
           tar xzf nginx-${{ steps.version.outputs.nginx_version }}-linux-arm64.tar.gz
-          
-          # Compatible version
-          tar xzf nginx-${{ steps.version.outputs.nginx_version }}-linux-arm64-compat.tar.gz
           
           # Install
           sudo ./install.sh
@@ -288,7 +287,7 @@ jobs:
           
           ### Build Information
           - Nginx: ${{ steps.version.outputs.nginx_version }}
-          - Architectures: amd64, arm64
+          - Architectures: standard amd64+arm64; compat amd64-only (CentOS 7 / vault.centos.org altarch arm64 403 under QEMU)
           - glibc versions: 2.39 (standard), 2.17 (compat)
           - Built: ${{ github.event.head_commit.timestamp }}
           - Commit: ${{ github.sha }}
