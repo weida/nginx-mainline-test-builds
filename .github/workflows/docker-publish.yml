@@ -41,14 +41,27 @@ jobs:
     
     - name: Get nginx version
       id: version
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -euo pipefail
-        NGINX_VERSION="$(
-          curl -fsSL --retry 3 --retry-delay 2 "https://api.github.com/repos/nginx/nginx/tags?per_page=100" |
-            jq -r '.[].name | select(test("^release-[0-9]+\\.[0-9]+\\.[0-9]+$")) | sub("^release-"; "")' |
-            sort -V |
-            tail -1
-        )"
+        NGINX_VERSION=""
+        for attempt in 1 2 3 4 5; do
+          NGINX_VERSION="$(
+            curl -fsSL --retry 3 --retry-delay 2 \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/nginx/nginx/tags?per_page=100" |
+              jq -r '.[].name | select(test("^release-[0-9]+\\.[0-9]+\\.[0-9]+$")) | sub("^release-"; "")' |
+              sort -V |
+              tail -1
+          )" || true
+          if [ -n "$NGINX_VERSION" ] && [ "$NGINX_VERSION" != "null" ]; then
+            break
+          fi
+          echo "version resolve attempt $attempt failed; retrying..."
+          sleep $((attempt * 2))
+        done
         if [ -z "$NGINX_VERSION" ] || [ "$NGINX_VERSION" = "null" ]; then
           echo "Failed to resolve nginx version"
           exit 1
@@ -56,7 +69,6 @@ jobs:
         echo "nginx_raw_tag=release-$NGINX_VERSION" >> $GITHUB_OUTPUT
         echo "nginx_version=$NGINX_VERSION" >> $GITHUB_OUTPUT
         echo "Nginx version: $NGINX_VERSION (glibc ${{ matrix.variant.glibc }})"
-    
     - name: Check if version exists
       id: check
       env:
@@ -218,7 +230,7 @@ jobs:
       always() && !cancelled() &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') &&
       github.ref == 'refs/heads/main' &&
-      needs.docker.result == 'success'
+      (needs.docker.result == 'success' || needs.docker.result == 'failure')
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -226,21 +238,33 @@ jobs:
 
     - name: Get nginx version
       id: version
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -euo pipefail
-        NGINX_VERSION="$(
-          curl -fsSL --retry 3 --retry-delay 2 "https://api.github.com/repos/nginx/nginx/tags?per_page=100" |
-            jq -r '.[].name | select(test("^release-[0-9]+\\.[0-9]+\\.[0-9]+$")) | sub("^release-"; "")' |
-            sort -V |
-            tail -1
-        )"
+        NGINX_VERSION=""
+        for attempt in 1 2 3 4 5; do
+          NGINX_VERSION="$(
+            curl -fsSL --retry 3 --retry-delay 2 \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/nginx/nginx/tags?per_page=100" |
+              jq -r '.[].name | select(test("^release-[0-9]+\\.[0-9]+\\.[0-9]+$")) | sub("^release-"; "")' |
+              sort -V |
+              tail -1
+          )" || true
+          if [ -n "$NGINX_VERSION" ] && [ "$NGINX_VERSION" != "null" ]; then
+            break
+          fi
+          echo "version resolve attempt $attempt failed; retrying..."
+          sleep $((attempt * 2))
+        done
         if [ -z "$NGINX_VERSION" ] || [ "$NGINX_VERSION" = "null" ]; then
           echo "Failed to resolve nginx version"
           exit 1
         fi
         echo "nginx_version=$NGINX_VERSION" >> $GITHUB_OUTPUT
         echo "Nginx version: $NGINX_VERSION"
-
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
