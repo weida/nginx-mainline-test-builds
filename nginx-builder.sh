@@ -310,6 +310,7 @@ $NGINX_CONFIGURE \
   --with-stream_realip_module \
   --with-stream_ssl_module \
   --with-stream_ssl_preread_module \
+  --with-compat \
   --with-cc-opt="-O2" \
   --with-ld-opt="-Wl,-rpath,/usr/local/lib"
 
@@ -352,3 +353,4 @@ echo "Features enabled:"
 echo "  - HTTP/2"
 echo "  - HTTP/3 (QUIC)"
 echo "  - TLS 1.3"
+echo "  - Dynamic modules ABI (--with-compat / load_module)"

@@ -33,6 +33,7 @@ It is primarily a **test / tracking / early-adoption** build project. The Docker
   - OpenSSL
   - liboqs (Open Quantum Safe)
   - Nginx
+- ✅ **Dynamic modules** (`--with-compat` / `load_module`) for third-party `.so` modules
 - ✅ Multi-architecture Docker images (x86_64, ARM64)
 - ✅ Standard and compatibility image tracks
 - ✅ Automated CI/CD builds and releases
@@ -72,6 +73,18 @@ Compat is expected to build slower than the standard track:
 
 This is build-time cost only. It does not mean the resulting runtime image is
 expected to be slower for normal nginx serving workloads.
+
+
+### Naming note: `-compat` tag vs `--with-compat`
+
+These are different meanings that happen to share the word "compat":
+
+| Name | What it means |
+| --- | --- |
+| Docker / release suffix `-compat` (e.g. `latest-compat`, `1.31.5-compat`) | **glibc 2.17 runtime track** — CentOS 7–era builder + AlmaLinux 8 minimal runtime for older hosts. Unrelated to nginx dynamic modules. |
+| nginx configure flag `--with-compat` | **Dynamic-module ABI** — enables `load_module` for third-party `.so` modules (needed e.g. for nginx-anthropic-openai-bridge). Applied to **both** standard and `-compat` image tracks via `nginx-builder.sh`. |
+
+Both can (and do) coexist: a `*-compat` image is the older-glibc track **and** is built with `--with-compat` so dynamic modules can load.
 
 ## Release Retention Policy
 
@@ -229,6 +242,7 @@ The script configures Nginx with the following default options:
 --with-http_stub_status_module \
 --with-http_realip_module \
 --with-http_sub_module \
+--with-compat \
 --with-pcre=/path/to/pcre2 \
 --with-zlib=/path/to/zlib \
 --with-openssl=/path/to/openssl \
