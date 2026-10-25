@@ -33,7 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          - { dockerfile: 'Dockerfile', suffix: '', glibc: '2.39', base: 'Ubuntu 24.04', cache_scope: 'nginx-standard', platforms: 'linux/amd64,linux/arm64' }
+          - { dockerfile: 'Dockerfile', suffix: '', glibc: '2.38', base: 'Ubuntu 24.04', cache_scope: 'nginx-standard', platforms: 'linux/amd64,linux/arm64' }
           - { dockerfile: 'Dockerfile.compat', suffix: '-compat', glibc: '2.17', base: 'CentOS 7 build + AlmaLinux 8 runtime', cache_scope: 'nginx-compat', platforms: 'linux/amd64,linux/arm64' }
     steps:
     - name: Checkout code
@@ -303,7 +303,7 @@ jobs:
           
           ### Docker Images
           
-          **Standard (glibc 2.39+)** - Ubuntu 24.04 base:
+          **Standard (glibc 2.38+)** - Ubuntu 24.04 base:
           ```bash
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/nginx-http3:latest
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/nginx-http3:${{ steps.version.outputs.nginx_version }}
@@ -318,8 +318,8 @@ jobs:
           ### Binary Installation
           
           **Choose the right version:**
-          - Standard: For Ubuntu 22.04+, Debian 12+, RHEL 9+ (glibc 2.35+)
-          - Compat: For CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11 (glibc 2.17+)
+          - Standard: For Ubuntu 24.04+, Debian 13+, Fedora 39+ (glibc 2.38+)
+          - Compat: For Debian 12, Ubuntu 22.04, RHEL/Rocky/Alma 8–9, CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11 (glibc 2.17+)
           
           **AMD64 (x86_64)**:
           ```bash
@@ -350,7 +350,7 @@ jobs:
           ### Build Information
           - Nginx: ${{ steps.version.outputs.nginx_version }}
           - Architectures: amd64, arm64 (standard and compat; CentOS 7 SCL via archive.kernel.org centos-vault)
-          - glibc versions: 2.39 (standard), 2.17 (compat)
+          - glibc versions: 2.38+ (standard), 2.17 (compat)
           - Built: ${{ github.event.head_commit.timestamp }}
           - Commit: ${{ github.sha }}
         files: |
