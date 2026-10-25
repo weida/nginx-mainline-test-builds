@@ -25,12 +25,12 @@ post-quantum crypto support, and ECH-capable builds.
 
 ## Quick Start
 
-**Standard version** (Ubuntu 22.04+, Debian 12+, RHEL 9+):
+**Standard version** (Ubuntu 24.04+, Debian 13+, Fedora 39+; glibc 2.38+):
 \`\`\`bash
 docker run -d -p 80:80 -p 443:443 -p 443:443/udp caoweida2004/nginx-http3:latest
 \`\`\`
 
-**Compatible version** (CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11):
+**Compatible version** (Debian 12, Ubuntu 22.04, RHEL/Rocky/Alma 8–9, CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11; glibc 2.17+):
 \`\`\`bash
 docker run -d -p 80:80 -p 443:443 -p 443:443/udp caoweida2004/nginx-http3:latest-compat
 \`\`\`
@@ -50,13 +50,13 @@ docker run -d -p 80:80 -p 443:443 -p 443:443/udp caoweida2004/nginx-http3:latest
 ### Standard Version (latest)
 - Runtime: scratch/minimal
 - glibc: copied from the updated Ubuntu 24.04 builder
-- Best for: Modern systems (Ubuntu 22.04+, Debian 12+, RHEL 9+)
+- Best for: Modern systems (Ubuntu 24.04+, Debian 13+, Fedora 39+; glibc 2.38+)
 - Package manager and unused tools such as apt, dpkg, tar, and sed are not present
 
 ### Compatible Version (latest-compat)
 - Base: CentOS 7 build + AlmaLinux 8 minimal runtime
 - glibc: 2.17+
-- Best for: Older systems (CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11)
+- Best for: Older systems (Debian 12, Ubuntu 22.04, RHEL/Rocky/Alma 8–9, CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11; glibc 2.17+)
 
 ## Runtime Package Policy
 
