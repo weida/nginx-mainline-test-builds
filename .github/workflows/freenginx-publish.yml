@@ -32,7 +32,7 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          - { dockerfile: 'Dockerfile.freenginx', suffix: '', glibc: '2.39', base: 'Ubuntu 24.04', cache_scope: 'freenginx-standard', platforms: 'linux/amd64,linux/arm64' }
+          - { dockerfile: 'Dockerfile.freenginx', suffix: '', glibc: '2.38', base: 'Ubuntu 24.04', cache_scope: 'freenginx-standard', platforms: 'linux/amd64,linux/arm64' }
           - { dockerfile: 'Dockerfile.freenginx.compat', suffix: '-compat', glibc: '2.17', base: 'CentOS 7 build + AlmaLinux 8 runtime', cache_scope: 'freenginx-compat', platforms: 'linux/amd64,linux/arm64' }
     steps:
     - name: Checkout code
@@ -299,7 +299,7 @@ jobs:
           
           ### Docker Images
           
-          **Standard (glibc 2.39+)** - Ubuntu 24.04 base:
+          **Standard (glibc 2.38+)** - Ubuntu 24.04 base:
           ```bash
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/freenginx-http3:latest
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/freenginx-http3:${{ steps.version.outputs.version }}
@@ -342,7 +342,7 @@ jobs:
           ### Build Information
           - freenginx: ${{ steps.version.outputs.version }}
           - Architectures: amd64, arm64 (standard and compat; CentOS 7 SCL via archive.kernel.org centos-vault)
-          - glibc versions: 2.39 (standard), 2.17 (compat)
+          - glibc versions: 2.38+ (standard), 2.17 (compat)
           - Built: ${{ github.event.head_commit.timestamp }}
           - Commit: ${{ github.sha }}
         files: |

@@ -100,7 +100,7 @@ Both can (and do) coexist: a `*-compat` image is the older-glibc track **and** i
 
 For testing only. For repeatable environments, replace `latest` with a concrete version tag.
 
-**nginx - Standard version** (Ubuntu 22.04+, Debian 12+, RHEL 9+):
+**nginx - Standard version** (Ubuntu 24.04+, Debian 13+, Fedora 39+; glibc 2.38+):
 ```bash
 docker run -d \
   -p 80:80 \
@@ -109,7 +109,7 @@ docker run -d \
   caoweida2004/nginx-http3:latest
 ```
 
-**nginx - Compatible version** (CentOS 7, Alibaba Cloud Linux 3, Ubuntu 20.04, Debian 11):
+**nginx - Compatible version** (Debian 12, Ubuntu 22.04, RHEL/Rocky/Alma 8–9, CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11; glibc 2.17+):
 ```bash
 docker run -d \
   -p 80:80 \
@@ -118,7 +118,7 @@ docker run -d \
   caoweida2004/nginx-http3:latest-compat
 ```
 
-**freenginx - Standard version** (Ubuntu 22.04+, Debian 12+, RHEL 9+):
+**freenginx - Standard version** (Ubuntu 24.04+, Debian 13+, Fedora 39+; glibc 2.38+):
 ```bash
 docker run -d \
   -p 80:80 \
@@ -127,7 +127,7 @@ docker run -d \
   caoweida2004/freenginx-http3:latest
 ```
 
-**freenginx - Compatible version** (CentOS 7, Alibaba Cloud Linux 3, Ubuntu 20.04, Debian 11):
+**freenginx - Compatible version** (Debian 12, Ubuntu 22.04, RHEL/Rocky/Alma 8–9, CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11; glibc 2.17+):
 ```bash
 docker run -d \
   -p 80:80 \

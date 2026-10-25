@@ -18,12 +18,12 @@ Testing-oriented usage guide for the mainline Docker images published by this re
 
 Use this for quick testing. For repeatable environments, replace `latest` with a concrete version tag.
 
-**Standard version** (Ubuntu 22.04+, Debian 12+, RHEL 9+):
+**Standard version** (Ubuntu 24.04+, Debian 13+, Fedora 39+; glibc 2.38+):
 ```bash
 docker run -d -p 80:80 caoweida2004/nginx-http3:latest
 ```
 
-**Compatible version** (CentOS 7, Alibaba Cloud Linux 3, Ubuntu 20.04, Debian 11):
+**Compatible version** (Debian 12, Ubuntu 22.04, RHEL/Rocky/Alma 8–9, CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11; glibc 2.17+):
 ```bash
 docker run -d -p 80:80 caoweida2004/nginx-http3:latest-compat
 ```
@@ -86,7 +86,7 @@ cd my-nginx
 
 ### Step 3: Create docker-compose.yml
 
-**For modern systems** (Ubuntu 22.04+, Debian 12+, RHEL 9+):
+**For modern systems** (Ubuntu 24.04+, Debian 13+, Fedora 39+; glibc 2.38+):
 ```yaml
 version: '3.8'
 services:
@@ -99,7 +99,7 @@ services:
     restart: unless-stopped
 ```
 
-**For older systems** (CentOS 7, Alibaba Cloud Linux 3, Ubuntu 20.04, Debian 11):
+**For older systems** (Debian 12, Ubuntu 22.04, RHEL/Rocky/Alma 8–9, CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11; glibc 2.17+):
 ```yaml
 version: '3.8'
 services:
@@ -228,13 +228,13 @@ See [docs/POST-QUANTUM-CRYPTO.md](docs/POST-QUANTUM-CRYPTO.md) for configuration
 - Runtime: scratch/minimal
 - glibc: copied from the updated Ubuntu 24.04 builder
 - Package-management and archive tools are not present in the final runtime image
-- For: Ubuntu 22.04+, Debian 12+, RHEL 9+
+- For: Ubuntu 24.04+, Debian 13+, Fedora 39+ (glibc 2.38+)
 
 **Compatible (`latest-compat`):**
 - Base: CentOS 7 build + AlmaLinux 8 minimal runtime
 - glibc: 2.17+
 - Compiler: devtoolset-9 for OpenSSL 4.0 compatibility
-- For: CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11
+- For: Debian 12, Ubuntu 22.04, RHEL/Rocky/Alma 8–9, CentOS 7, Alibaba Cloud Linux 2/3, Ubuntu 20.04, Debian 11
 
 ## Runtime Package Policy
 
